@@ -40,25 +40,28 @@ EXCLUDE = re.compile(r"\b(mobile phone|smartphone|sim[- ]?free|iphone|android ph
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                     "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"}
 
-def fetch(url, timeout=60):
-    for _ in range(3):
+def fetch(url, timeout=40):
+    for _ in range(2):
         try:
             return urllib.request.urlopen(urllib.request.Request(url, headers=UA),
                                           timeout=timeout).read().decode("utf-8", "ignore")
         except Exception:
-            time.sleep(2)
+            time.sleep(1.5)
     return ""
 
 def img(pid, w=750, h=750):
     return f"https://media.4rgos.it/s/Argos/{pid}_R_SET?w={w}&h={h}&qlt=80&fmt.jpeg.interlaced=true"
 
-def snapshots(seed, limit=80):
-    """Archived snapshots (2024-2025), BIGGEST captures first.
-    Full pages embed the product grid; thin/partial captures don't, so we
-    sort by archived byte-length descending to hit the rich ones first."""
+def snapshots(seed, limit=150):
+    """Biggest captures first → most products per page. Window is 2024→now so we
+    pull the largest candidate list possible; freshness/availability is then
+    enforced separately by check_availability.py against the live Argos site.
+    (Argos's newest pages embed fewer products in raw HTML, so fresh-only
+    snapshots yield far fewer products — a big candidate list + live checker
+    gives more confirmed-available products in the end.)"""
     api = ("http://web.archive.org/cdx/search/cdx?url=" + urllib.parse.quote(seed) +
            "&output=text&fl=timestamp,length&filter=statuscode:200"
-           "&from=2024&to=2025&limit=" + str(limit))
+           "&from=2024&limit=" + str(limit))
     rows = []
     for line in fetch(api, 30).splitlines():
         p = line.split()
@@ -121,7 +124,7 @@ def main():
             good = 0           # snapshots that actually contained products
             tried = 0
             for ts in snapshots(seed):
-                if good >= 3 or tried >= 22:   # enough good captures / give up on this seed
+                if good >= 3 or tried >= 12:   # enough good captures / give up on this seed
                     break
                 tried += 1
                 prods = extract(fetch(f"https://web.archive.org/web/{ts}id_/https://{seed}"))

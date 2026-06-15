@@ -30,6 +30,35 @@ Add/adjust categories by editing the `SEEDS` dict at the top of `wayback_scraper
 
 ---
 
+## ✅ Remove products that are no longer available — `check_availability.py`
+
+The Wayback data is **real but historical**, so some products have since been
+delisted (their Argos page shows *"Oops, that didn't go to plan"*). This script
+visits every product link **live** and removes the ones that are gone, rewriting
+the JSON in place.
+
+```bash
+source venv/bin/activate
+python check_availability.py                 # check every category
+python check_availability.py --only tv       # just one file
+python check_availability.py --headful       # watch the browser
+```
+
+**Run this on YOUR own machine, on a normal UK home/residential IP.** Argos
+(Akamai Bot Manager + UK geo-block) returns HTTP 403 to datacenter/cloud/VPN IPs,
+so availability can't be checked from a server — exactly the same reason the live
+scraper needs a residential IP. The script reuses the same stealth + Akamai
+cookie warm-up. It only deletes a product when the page clearly says it's gone
+(it keeps anything it can't reach, so a timeout/block never loses real data).
+
+> Note: refreshing the Wayback data from the very newest snapshots was tried and
+> gives **fewer** products — Argos's newer pages embed most products client-side,
+> so recent captures are leaner. The reliable workflow is therefore: keep the big
+> Wayback candidate list, then prune it to currently-available items with this
+> checker.
+
+---
+
 ## Alternative: live scraper — `argos_scraper.py` (needs a UK residential IP)
 
 Scrapes **headphones, TVs, office equipment, and server/NAS** products from
